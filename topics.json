@@ -1,0 +1,4 @@
+[
+  { "id": "algebra", "name": "Algebra", "file": "algebra.json" },
+  { "id": "geometry", "name": "Geometry", "file": "geometry.json" }
+]
