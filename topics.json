@@ -1,5 +1,5 @@
 [
   { "id": "algebra", "name": "Algebra", "file": "algebra.json" },
   { "id": "geometry", "name": "Geometry", "file": "geometry.json" },
-  { "id": "analytic geometry", "name": "Analytic Geometry", "file": "analytic_geometry.json" }
+  { "id": "analytic-geometry", "name": "Analytic Geometry", "file": "analytic_geometry.json" }
 ]
