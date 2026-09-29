@@ -4,5 +4,6 @@
   { "id": "analytic-geometry", "name": "Analytic Geometry", "file": "analytic_geometry.json" },
   { "id": "calculus", "name": "Calculus", "file": "calculus.json" },
   { "id": "trigonometry", "name": "Trigonometry", "file": "trigonometry.json" },
-  { "id": "economics", "name": "Economics", "file": "economics.json" }
+  { "id": "economics", "name": "Economics", "file": "economics.json" },
+  { "id": "mechanics-strema", "name": "Mechanics & Strema", "file": "strema.json" }
 ]
