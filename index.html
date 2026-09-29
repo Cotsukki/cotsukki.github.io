@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Review App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        /* Prevent tap highlight on mobile for cleaner UI */
+        * { -webkit-tap-highlight-color: transparent; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Top Navigation Bar for Topics -->
+    <header class="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-10">
+        <div class="max-w-3xl mx-auto px-4 py-3">
+            <nav id="topic-bar" class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide snap-x">
+                <!-- Topics will be dynamically injected here -->
+            </nav>
+        </div>
+    </header>
+
+    <main class="flex-grow w-full max-w-3xl mx-auto px-4 py-6 flex flex-col gap-6">
+        
+        <!-- Stats & Clear Progress -->
+        <div class="flex flex-wrap items-center justify-between gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+            <div class="flex gap-4 text-sm font-medium">
+                <div class="flex flex-col text-green-600">
+                    <span class="text-xs uppercase tracking-wider opacity-70">Correct</span>
+                    <span id="stat-correct" class="text-lg font-bold">0</span>
+                </div>
+                <div class="flex flex-col text-red-500">
+                    <span class="text-xs uppercase tracking-wider opacity-70">Missed</span>
+                    <span id="stat-missed" class="text-lg font-bold">0</span>
+                </div>
+                <div class="flex flex-col text-slate-500">
+                    <span class="text-xs uppercase tracking-wider opacity-70">Left</span>
+                    <span id="stat-left" class="text-lg font-bold">0</span>
+                </div>
+            </div>
+            <button onclick="clearProgress()" class="text-sm px-3 py-1.5 text-slate-500 border border-slate-200 rounded hover:bg-slate-50 transition-colors">
+                Clear Progress
+            </button>
+        </div>
+
+        <!-- Filters -->
+        <div class="flex gap-2">
+            <button onclick="setFilter('all')" id="btn-filter-all" class="flex-1 py-2 px-4 rounded-lg text-sm font-semibold transition-colors bg-blue-600 text-white shadow-sm">All</button>
+            <button onclick="setFilter('unanswered')" id="btn-filter-unanswered" class="flex-1 py-2 px-4 rounded-lg text-sm font-semibold transition-colors bg-white text-slate-600 border border-slate-200 hover:bg-slate-50">Unanswered</button>
+            <button onclick="setFilter('missed')" id="btn-filter-missed" class="flex-1 py-2 px-4 rounded-lg text-sm font-semibold transition-colors bg-white text-slate-600 border border-slate-200 hover:bg-slate-50">Missed</button>
+        </div>
+
+        <!-- Question Area -->
+        <div class="bg-white p-5 sm:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <div class="flex justify-between items-center mb-4">
+                <h2 id="question-number" class="text-lg font-bold text-slate-400">Question 1</h2>
+                <span id="question-status" class="text-sm font-semibold px-2 py-1 rounded bg-slate-100 text-slate-500 hidden">Answered</span>
+            </div>
+            
+            <p id="question-prompt" class="text-lg sm:text-xl font-medium mb-6 text-slate-900 leading-relaxed">
+                <!-- Prompt goes here -->
+            </p>
+
+            <div id="choices-container" class="flex flex-col gap-3">
+                <!-- Choices injected here -->
+            </div>
+
+            <!-- Note (Hidden by default) -->
+            <div id="note-container" class="mt-6 p-4 rounded-xl bg-blue-50 border border-blue-100 hidden">
+                <div class="flex gap-2">
+                    <svg class="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <p id="note-text" class="text-sm text-blue-900 leading-relaxed"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation Buttons -->
+        <div class="flex justify-between gap-4">
+            <button onclick="navigate(-1)" id="btn-prev" class="flex-1 py-3 sm:py-4 bg-white border border-slate-200 rounded-xl font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                &larr; Previous
+            </button>
+            <button onclick="navigate(1)" id="btn-next" class="flex-1 py-3 sm:py-4 bg-slate-900 border border-slate-900 rounded-xl font-semibold text-white hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                Next &rarr;
+            </button>
+        </div>
+
+        <!-- Numbered Grid -->
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 mb-8">
+            <h3 class="text-sm font-semibold text-slate-500 mb-3 uppercase tracking-wider">Question Navigator</h3>
+            <div id="grid-container" class="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-2">
+                <!-- Numbered buttons injected here -->
+            </div>
+        </div>
+    </main>
+
+    <script>
+        /* 
+         * DATA STRUCTURE
+         * Edit this object to add or modify topics and questions.
+         */
+        const quizData = {
+            "Algebra": [
+                {
+                    id: "alg_1",
+                    prompt: "For a given function, it is found that f(t) = f(−t). What type of symmetry does f(t) have?",
+                    choices: [
+                        { letter: "A", text: "odd symmetry" },
+                        { letter: "B", text: "even symmetry" },
+                        { letter: "C", text: "rotational symmetry" },
+                        { letter: "D", text: "quarter-wave symmetry" }
+                    ],
+                    answer: "B",
+                    note: "Even symmetry means the function is mirrored across the vertical axis: f(t) = f(−t). Odd symmetry would be f(−t) = −f(t)."
+                },
+                {
+                    id: "alg_2",
+                    prompt: "Which number has four significant figures?",
+                    choices: [
+                        { letter: "A", text: "0.0014" },
+                        { letter: "B", text: "0.01414" },
+                        { letter: "C", text: "0.141" },
+                        { letter: "D", text: "1.4140" }
+                    ],
+                    answer: "B",
+                    note: "Leading zeros are not significant. 0.01414 has four significant figures. 0.0014 has two, 0.141 has three, and 1.4140 has five because the trailing zero after the decimal is significant."
+                },
+                {
+                    id: "alg_3",
+                    prompt: "Napierian logarithms have a base closest to which number?",
+                    choices: [
+                        { letter: "A", text: "2.17" },
+                        { letter: "B", text: "2.72" },
+                        { letter: "C", text: "3.14" },
+                        { letter: "D", text: "10" }
+                    ],
+                    answer: "B",
+                    note: "A Napierian logarithm is a natural logarithm. Its base is e, about 2.718, which is closest to 2.72. Base 10 is the common logarithm."
+                },
+                {
+                    id: "alg_4",
+                    prompt: "If the second derivative of the equation of a curve is equal to the negative of the equation of that same curve, the curve is ___.",
+                    choices: [
+                        { letter: "A", text: "an exponential" },
+                        { letter: "B", text: "a sinusoid" },
+                        { letter: "C", text: "a tangent" },
+                        { letter: "D", text: "a parabola" }
+                    ],
+                    answer: "B",
+                    note: "The condition is y″ = −y, or y″ + y = 0. Solutions of that equation are sinusoids: combinations of sine and cosine."
+                },
+                {
+                    id: "alg_5",
+                    prompt: "To find the angle of a triangle, given only the lengths of the sides, one would use ___.",
+                    choices: [
+                        { letter: "A", text: "the law of cosines" },
+                        { letter: "B", text: "the law of sines" },
+                        { letter: "C", text: "the law of tangents" },
+                        { letter: "D", text: "the inverse-square law" }
+                    ],
+                    answer: "A",
+                    note: "When all three sides are known, the law of cosines solves for an angle. The law of sines needs a known angle as well as sides."
+                },
+                {
+                    id: "alg_6",
+                    prompt: "Which is true regarding the signs of the natural functions for angles between 90° and 180°?",
+                    choices: [
+                        { letter: "A", text: "The tangent is positive" },
+                        { letter: "B", text: "The cotangent is positive" },
+                        { letter: "C", text: "The cosine is negative" },
+                        { letter: "D", text: "The sine is negative" }
+                    ],
+                    answer: "C",
+                    note: "Angles from 90° to 180° are in quadrant II. Sine is positive there. Cosine, tangent, and cotangent are negative."
+                }
+            ]
+        };
+
+        // APP STATE
+        let topics = Object.keys(quizData);
+        let currentTopic = topics[0];
+        let currentQuestionIndex = 0; // Absolute index in the current topic array
+        let currentFilter = 'all'; // 'all', 'unanswered', 'missed'
+        
+        // Load answers from LocalStorage
+        // Format: { "Algebra": { "alg_1": "A", "alg_2": "B" } }
+        let userAnswers = JSON.parse(localStorage.getItem('reviewAppProgress')) || {};
+
+        // INITIALIZATION
+        window.onload = () => {
+            renderTopicBar();
+            loadTopic(currentTopic);
+        };
+
+        function renderTopicBar() {
+            const bar = document.getElementById('topic-bar');
+            bar.innerHTML = '';
+            topics.forEach(topic => {
+                const btn = document.createElement('button');
+                btn.innerText = topic;
+                btn.className = `snap-start whitespace-nowrap px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
+                    topic === currentTopic 
+                    ? 'bg-slate-900 text-white' 
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`;
+                btn.onclick = () => loadTopic(topic);
+                bar.appendChild(btn);
+            });
+        }
+
+        function loadTopic(topic) {
+            currentTopic = topic;
+            currentFilter = 'all';
+            
+            // Ensure topic exists in progress object
+            if (!userAnswers[currentTopic]) {
+                userAnswers[currentTopic] = {};
+            }
+
+            renderTopicBar();
+            updateFilterButtonsUI();
+            
+            // Find the first unanswered question, or default to 0
+            let firstUnanswered = quizData[currentTopic].findIndex(q => !userAnswers[currentTopic][q.id]);
+            currentQuestionIndex = firstUnanswered !== -1 ? firstUnanswered : 0;
+            
+            updateUI();
+        }
+
+        function updateStats() {
+            const questions = quizData[currentTopic];
+            const answers = userAnswers[currentTopic];
+            
+            let correct = 0;
+            let missed = 0;
+            let left = 0;
+
+            questions.forEach(q => {
+                const ans = answers[q.id];
+                if (!ans) {
+                    left++;
+                } else if (ans === q.answer) {
+                    correct++;
+                } else {
+                    missed++;
+                }
+            });
+
+            document.getElementById('stat-correct').innerText = correct;
+            document.getElementById('stat-missed').innerText = missed;
+            document.getElementById('stat-left').innerText = left;
+        }
+
+        function setFilter(filterType) {
+            currentFilter = filterType;
+            updateFilterButtonsUI();
+            
+            const filtered = getFilteredIndices();
+            if (filtered.length > 0) {
+                // If current question is not in filter, jump to the first one that is
+                if (!filtered.includes(currentQuestionIndex)) {
+                    currentQuestionIndex = filtered[0];
+                }
+            }
+            updateUI();
+        }
+
+        function updateFilterButtonsUI() {
+            const btns = {
+                'all': document.getElementById('btn-filter-all'),
+                'unanswered': document.getElementById('btn-filter-unanswered'),
+                'missed': document.getElementById('btn-filter-missed')
+            };
+
+            const activeClass = "bg-blue-600 text-white shadow-sm border-transparent";
+            const inactiveClass = "bg-white text-slate-600 border-slate-200 hover:bg-slate-50";
+
+            for (const [key, el] of Object.entries(btns)) {
+                el.className = `flex-1 py-2 px-2 sm:px-4 rounded-lg text-xs sm:text-sm font-semibold transition-colors border ${key === currentFilter ? activeClass : inactiveClass}`;
+            }
+        }
+
+        function getFilteredIndices() {
+            const questions = quizData[currentTopic];
+            const answers = userAnswers[currentTopic];
+            const indices = [];
+
+            questions.forEach((q, index) => {
+                const ans = answers[q.id];
+                const isCorrect = ans === q.answer;
+
+                if (currentFilter === 'all') {
+                    indices.push(index);
+                } else if (currentFilter === 'unanswered' && !ans) {
+                    indices.push(index);
+                } else if (currentFilter === 'missed' && ans && !isCorrect) {
+                    indices.push(index);
+                }
+            });
+            return indices;
+        }
+
+        function renderQuestion() {
+            const questions = quizData[currentTopic];
+            if (questions.length === 0) return;
+
+            const q = questions[currentQuestionIndex];
+            const userAnswer = userAnswers[currentTopic][q.id];
+            const isAnswered = !!userAnswer;
+            
+            document.getElementById('question-number').innerText = `Question ${currentQuestionIndex + 1} of ${questions.length}`;
+            document.getElementById('question-prompt').innerText = q.prompt;
+
+            // Status badge
+            const statusEl = document.getElementById('question-status');
+            if (isAnswered) {
+                statusEl.classList.remove('hidden');
+                if (userAnswer === q.answer) {
+                    statusEl.innerText = "Correct";
+                    statusEl.className = "text-sm font-semibold px-2 py-1 rounded bg-green-100 text-green-700";
+                } else {
+                    statusEl.innerText = "Incorrect";
+                    statusEl.className = "text-sm font-semibold px-2 py-1 rounded bg-red-100 text-red-700";
+                }
+            } else {
+                statusEl.classList.add('hidden');
+            }
+
+            // Render Choices
+            const choicesContainer = document.getElementById('choices-container');
+            choicesContainer.innerHTML = '';
+
+            q.choices.forEach(c => {
+                const btn = document.createElement('button');
+                btn.className = "w-full text-left p-4 rounded-xl border-2 transition-all flex items-start gap-4 focus:outline-none";
+                
+                // Styling based on state
+                if (!isAnswered) {
+                    btn.classList.add("border-slate-200", "hover:border-blue-400", "hover:bg-blue-50", "bg-white", "cursor-pointer");
+                    btn.onclick = () => handleAnswer(q.id, c.letter);
+                } else {
+                    btn.classList.add("cursor-default");
+                    if (c.letter === q.answer) {
+                        // Correct answer (highlight green regardless of user choice)
+                        btn.classList.add("border-green-500", "bg-green-50");
+                    } else if (c.letter === userAnswer) {
+                        // User chose this and it's wrong
+                        btn.classList.add("border-red-500", "bg-red-50");
+                    } else {
+                        // Other wrong options
+                        btn.classList.add("border-slate-100", "bg-slate-50", "opacity-60");
+                    }
+                }
+
+                // Inner HTML (Letter and Text)
+                const letterBoxClass = isAnswered 
+                    ? (c.letter === q.answer ? 'bg-green-500 text-white' : (c.letter === userAnswer ? 'bg-red-500 text-white' : 'bg-slate-200 text-slate-500'))
+                    : 'bg-slate-100 text-slate-600 group-hover:bg-blue-100 group-hover:text-blue-600';
+
+                btn.innerHTML = `
+                    <span class="flex-shrink-0 w-8 h-8 rounded flex items-center justify-center font-bold text-sm ${letterBoxClass}">
+                        ${c.letter}
+                    </span>
+                    <span class="mt-1 text-slate-800">${c.text}</span>
+                `;
+                choicesContainer.appendChild(btn);
+            });
+
+            // Note Rendering
+            const noteContainer = document.getElementById('note-container');
+            if (isAnswered && q.note) {
+                document.getElementById('note-text').innerText = q.note;
+                noteContainer.classList.remove('hidden');
+            } else {
+                noteContainer.classList.add('hidden');
+            }
+        }
+
+        function handleAnswer(questionId, selectedLetter) {
+            if (userAnswers[currentTopic][questionId]) return; // Already answered
+
+            userAnswers[currentTopic][questionId] = selectedLetter;
+            localStorage.setItem('reviewAppProgress', JSON.stringify(userAnswers));
+            
+            updateUI();
+        }
+
+        function renderGrid() {
+            const grid = document.getElementById('grid-container');
+            grid.innerHTML = '';
+            
+            const questions = quizData[currentTopic];
+            const answers = userAnswers[currentTopic];
+            const filteredIndices = getFilteredIndices();
+
+            questions.forEach((q, index) => {
+                // Skip rendering in grid if not in filter
+                if (!filteredIndices.includes(index)) return;
+
+                const ans = answers[q.id];
+                const btn = document.createElement('button');
+                btn.innerText = index + 1;
+                
+                let baseClasses = "w-full aspect-square rounded-lg flex items-center justify-center text-sm font-semibold transition-all border-2 ";
+                
+                if (!ans) {
+                    baseClasses += "bg-white border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600";
+                } else if (ans === q.answer) {
+                    baseClasses += "bg-green-100 border-green-200 text-green-700";
+                } else {
+                    baseClasses += "bg-red-100 border-red-200 text-red-700";
+                }
+
+                if (index === currentQuestionIndex) {
+                    baseClasses += " ring-2 ring-blue-500 ring-offset-2 border-transparent";
+                }
+
+                btn.className = baseClasses;
+                btn.onclick = () => {
+                    currentQuestionIndex = index;
+                    updateUI();
+                };
+                grid.appendChild(btn);
+            });
+        }
+
+        function navigate(direction) {
+            const filtered = getFilteredIndices();
+            if (filtered.length === 0) return;
+
+            let currentIndexInFiltered = filtered.indexOf(currentQuestionIndex);
+            
+            if (currentIndexInFiltered === -1) {
+                // If current question dropped out of filter, find the closest one
+                currentQuestionIndex = filtered[0];
+            } else {
+                let nextIndex = currentIndexInFiltered + direction;
+                if (nextIndex >= 0 && nextIndex < filtered.length) {
+                    currentQuestionIndex = filtered[nextIndex];
+                }
+            }
+            updateUI();
+        }
+
+        function updateNavButtons() {
+            const filtered = getFilteredIndices();
+            const btnPrev = document.getElementById('btn-prev');
+            const btnNext = document.getElementById('btn-next');
+
+            if (filtered.length === 0) {
+                btnPrev.disabled = true;
+                btnNext.disabled = true;
+                return;
+            }
+
+            const currentIndexInFiltered = filtered.indexOf(currentQuestionIndex);
+            btnPrev.disabled = currentIndexInFiltered <= 0;
+            btnNext.disabled = currentIndexInFiltered === -1 || currentIndexInFiltered >= filtered.length - 1;
+        }
+
+        function updateUI() {
+            updateStats();
+            renderQuestion();
+            renderGrid();
+            updateNavButtons();
+        }
+
+        function clearProgress() {
+            if (confirm(`Are you sure you want to clear your progress for ${currentTopic}?`)) {
+                userAnswers[currentTopic] = {};
+                localStorage.setItem('reviewAppProgress', JSON.stringify(userAnswers));
+                currentFilter = 'all';
+                currentQuestionIndex = 0;
+                updateFilterButtonsUI();
+                updateUI();
+            }
+        }
+    </script>
+</body>
+</html>
