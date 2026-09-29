@@ -1,0 +1,17 @@
+{
+  "topic": "Algebra",
+  "questions": [
+    {
+      "id": 1,
+      "prompt": "For a given function, it is found that f(t) = f(−t). What type of symmetry does f(t) have?",
+      "choices": [
+        {"letter": "A", "text": "odd symmetry"},
+        {"letter": "B", "text": "even symmetry"},
+        {"letter": "C", "text": "rotational symmetry"},
+        {"letter": "D", "text": "quarter-wave symmetry"}
+      ],
+      "answer": "B",
+      "note": "Even symmetry means the function is mirrored across the vertical axis."
+    }
+  ]
+}
