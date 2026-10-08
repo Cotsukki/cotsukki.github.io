@@ -6,5 +6,6 @@
   { "id": "trigonometry", "name": "Trigonometry", "file": "trigonometry.json" },
   { "id": "economics", "name": "Economics", "file": "economics.json" },
   { "id": "mechanics-strema", "name": "Mechanics & Strema", "file": "strema.json" },
-  { "id": "chemistry ", "name": "Chemistry", "file": "chemistry.json" }
+  { "id": "chemistry ", "name": "Chemistry", "file": "chemistry.json" },
+  { "id": "physics", "name": "Physics", "file": "physics.json" }
 ]
