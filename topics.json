@@ -7,5 +7,8 @@
   { "id": "economics", "name": "Economics", "file": "economics.json" },
   { "id": "mechanics-strema", "name": "Mechanics & Strema", "file": "strema.json" },
   { "id": "chemistry ", "name": "Chemistry", "file": "chemistry.json" },
-  { "id": "physics", "name": "Physics", "file": "physics.json" }
+  { "id": "physics", "name": "Physics", "file": "physics.json" },
+  { "id": "fluid-machinery", "name": "Fluid Machinery", "file": "fluid_machinery.json" },
+  { "id": "fluid-mechanics", "name": "Fluid Mechanics", "file": "fluid_mechanics.json" },
+  { "id": "thermodynamics", "name": "Thermodynamics", "file": "thermodynamics.json" }
 ]
